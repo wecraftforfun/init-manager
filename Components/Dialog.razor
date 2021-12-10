@@ -1,0 +1,29 @@
+﻿@using BlazorModal 
+
+<Modal DialogSize="Modal.enumDialogSize.Large" @ref="modal">
+    <ModalHeader>@Title</ModalHeader>
+    <ModalBody>
+       @ChildContent
+    </ModalBody>
+</Modal>
+
+@code {
+    public Modal modal;
+
+    [Parameter]
+    public string Title{ get; set; }
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    public void OpenModal()
+    {
+        modal.Show();
+    }
+
+    public void CloseModal()
+    {
+        modal.Hide();
+    }
+
+}
