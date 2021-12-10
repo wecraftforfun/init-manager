@@ -1,0 +1,47 @@
+﻿@using InitManager.Data
+
+@{
+    r = new Tuple<Unit, int?>(unit, number);
+}
+<div>
+    <div class="input-group mt-2">
+        <label class="input-group-text">Name</label>
+        <InputText class="form-control" @bind-Value="unit.Name"></InputText>
+    </div>
+    <div class="form-check mt-2">
+        <label class="form-check-label">Is Player</label>
+        <InputCheckbox class="form-check-input" @bind-Value="unit.IsPlayer"></InputCheckbox>
+    </div>
+    @if(unit.IsPlayer)
+    {
+        <div class="input-group mt-2">
+            <label class="input-group-text">Played By</label>
+            <InputText class="form-control" @bind-Value="unit.PlayedBy"></InputText>
+        </div>        
+    }else
+    {
+        <div class="input-group mt-2">
+            <label class="input-group-text">Number</label>
+            <InputNumber class="form-control" @bind-Value="number"></InputNumber>
+        </div>   
+    }
+    <div class="input-group mt-2">
+        <label class="input-group-text">Init Roll</label>
+        <InputNumber class="form-control" @bind-Value="unit.InitRoll"></InputNumber>
+    </div> 
+    <button type="submit" @onclick="Submit" class="btn btn-primary mt-2">Add Unit(s)</button>
+</div>
+
+@code {
+    private Unit unit = new Unit();
+    private int? number {get;set;}
+    private Tuple<Unit, int?> r { get; set; }
+    [Parameter]
+    public EventCallback<Tuple<Unit,int?>> OnSubmit { get; set; }
+
+    public async Task Submit()
+    {
+        await OnSubmit.InvokeAsync(r);
+    }
+
+}

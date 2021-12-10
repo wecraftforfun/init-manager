@@ -1,0 +1,57 @@
+﻿@using InitManager.Data
+
+<div class="card mt-2">
+    <div class="card-body">
+        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle pe-auto" @onclick="remove">
+            <i class="bi bi-trash"></i>
+        </span>
+        <div class="input-group mt-2">
+            <label class="input-group-text">Name</label>
+            <InputText class="form-control" id="name" @bind-Value="Name" @onkeyup="NameChanged"></InputText>
+        </div>
+        <div class="input-group mt-2">
+            <label class="input-group-text">Played By</label>
+            <InputText class="form-control" id="playedBy" @bind-Value="PlayedBy" @onkeyup="PlayedByChanged"></InputText>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string Name { get; set; }
+    private string PlayedBy { get; set; }
+
+    private bool nameChanged { get; set; }
+    private bool playedByChanged { get; set; }
+
+    [Parameter]
+    public int formId { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPlayerFormDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<Tuple<Unit,int>> OnPlayerChanged { get; set; }
+
+    private async Task NameChanged()
+    {
+        nameChanged = true;
+        if(nameChanged && playedByChanged)
+        {
+            await OnPlayerChanged.InvokeAsync(new Tuple<Unit, int>(new Unit{Name = Name, PlayedBy = PlayedBy}, formId));
+        }
+    }
+
+    private async Task PlayedByChanged()
+    {
+        playedByChanged = true;
+        if(nameChanged && playedByChanged)
+        {
+            await OnPlayerChanged.InvokeAsync(new Tuple<Unit, int>(new Unit{Name = Name, PlayedBy = PlayedBy}, formId));
+        }
+    }
+
+    private async Task remove()
+    {
+        await OnPlayerFormDeleted.InvokeAsync(formId);
+    }
+}

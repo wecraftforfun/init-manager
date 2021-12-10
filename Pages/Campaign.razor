@@ -1,0 +1,149 @@
+﻿@page "/campaign/{name}"
+@using InitManager.Data
+@using Microsoft.AspNetCore.Components
+@inject CampaignService CampaignService
+@using BlazorModal 
+@using InitManager.Components
+@using Microsoft.Maui.Essentials;
+@using System.Text.Json;
+
+<h3>Campaign @name</h3>
+<div>
+<button class="btn btn-primary" @onclick="toggleEditMode">
+    @if (isEditMode)
+   {
+       <i class="bi bi-save"></i>
+       
+        }else
+        {
+       <i class="bi bi-pencil"></i> 
+        }
+        
+ </button>
+</div>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+          <th scope="col">Position</th>
+          <th scope="col">Name</th>
+          <th scope="col">Played By</th>
+          <th scope="col">Init Roll</th>
+          <th scope="col"></th>
+        </tr>
+    </thead>
+     <tbody>
+        @{
+            var campaign = CampaignService.GetCampaigns().Single(x => x.Name == name);
+            var counter = 1;
+        }
+        @foreach (var unit in campaign.Units.OrderByDescending(x => x.InitRoll))
+        {
+          
+         <tr class="@(unit.IsPlayer ? "table-info" : "table-danger") @(currentTurn == counter -1 ? "table-dark" : "")">
+             <td>@counter</td>
+             <td>@unit.Name</td>
+             <td>@unit.PlayedBy</td>
+             <td>
+                 @if (isEditMode)
+                {
+                    <input type="number" class="form-control" @bind="@unit.InitRoll" />
+                    }else
+                    {
+                 @unit.InitRoll       
+                    }
+                 
+            </td>
+             <td>
+                 <i @onclick="@(() => RemoveUnit(@unit.Name))" class="btn bi bi-trash"></i>
+            </td>
+         </tr>
+            
+        counter++;
+            
+        }
+         
+     </tbody>
+</table>
+<div>
+    <button class="btn" @onclick="PreviousTurn">Previous Turn <i class="bi bi-arrow-up"></i></button>
+    <button class="btn btn-primary" @onclick="OpenModal">Add Unit(s)</button>
+    <button class="btn btn-success" @onclick="NextTurn">Next Turn <i class="bi bi-arrow-down"></i></button>
+</div>
+<Dialog @ref="dialog" Title="New Unit(s)">
+    <EditForm Model="t" @ref="form">
+        <UnitForm OnSubmit="AddUnit"></UnitForm>
+    </EditForm>
+</Dialog>
+@code {
+    [Parameter]
+    public string name { get; set; }
+    public Tuple<Unit, int> t = new Tuple<Unit,int>(new Unit(), 5);
+    public Unit unit = new();
+    private EditForm form { get; set; }
+    private bool isEditMode = false;
+    private bool shouldDisplayReset { get; set; }
+
+    private Dialog dialog { get; set; }
+
+    private int currentTurn = 0;
+
+    public void RemoveUnit(string unitName)
+    {
+        CampaignService.GetCampaigns().Single(x => x.Name == name).Units.RemoveAll(x => x.Name == unitName);
+    }
+
+    private void displayReset()
+    {
+        if(CampaignService.GetCampaigns().Single(x => x.Name == name).Units.All(x => x.HasPlayed))
+        {
+            shouldDisplayReset = true;
+        }
+    }
+
+    private void PreviousTurn()
+    {
+        currentTurn--;
+    }
+
+    private void NextTurn()
+    {
+        if (currentTurn >= CampaignService.GetCampaigns().Single(x => x.Name == name).Units.Count -1)
+        {
+            currentTurn = 0;    
+        }else
+        {
+            currentTurn++;    
+        }
+    }
+
+    public void AddUnit(Tuple<Unit,int?> t)
+    {
+        if (t.Item2.HasValue && t.Item2.Value.CompareTo(0) > 0)
+        {
+            var monsterName = t.Item1.Name;
+            for (var i = 0; i < t.Item2; i++)
+            {
+                var monster = new Unit { InitRoll = t.Item1.InitRoll, IsPlayer = t.Item1.IsPlayer, Name = monsterName + (i+1) };
+                CampaignService.GetCampaigns().Single(x => x.Name == name).Units.Add(monster);        
+            }
+        }else
+        {
+            CampaignService.GetCampaigns().Single(x => x.Name == name).Units.Add(t.Item1);        
+        }
+        var stringed = JsonSerializer.Serialize(CampaignService.GetCampaigns());
+        Preferences.Set("campaigns", stringed);
+        dialog.CloseModal();
+    }
+
+    public void OpenModal()
+    {
+        dialog.OpenModal();
+    }
+
+    private void toggleEditMode()
+    {
+        isEditMode = !isEditMode;
+    }
+
+}
